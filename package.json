@@ -1,0 +1,23 @@
+{
+  "name": "agriculture",
+  "version": "1.0.0",
+  "description": "agriculture de precision ( getting data from DB and display it as a statistics ) ",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TidelxD/NodeJS-Agriculture.git"
+  },
+  "author": "kechar zakaria",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TidelxD/NodeJS-Agriculture/issues"
+  },
+  "homepage": "https://github.com/TidelxD/NodeJS-Agriculture#readme",
+  "dependencies": {
+    "mongoose": "^6.2.10",
+    "underscore": "^1.13.2"
+  }
+}
