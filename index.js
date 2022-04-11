@@ -2,7 +2,10 @@ const express= require('express');
 const mysql = require('mysql');
 
 const login = require('./logger/logging')
+
 const app = express();
+
+
 app.use(express.json());
 app.use(login );
 
@@ -13,11 +16,13 @@ const db = mysql.createConnection({
   password:"",
   database:"agriculture"
 });
+
 // connect to database
  db.connect((err)=>{
    if(err){
      throw err;
    }
+
    console.log('Connection to DB done ! ');
  });
 
@@ -33,7 +38,7 @@ const db = mysql.createConnection({
 
  // Create Table 
  app.get("/createposttable",(req,res)=>{
-   let sql = "CREATE TABLE IF NOT EXISTS posts (id int AUTO_INCREMENT, temperature int, humidity int, timestamp VARCHAR(255), PRIMARY KEY(id))";
+   let sql = "CREATE TABLE IF NOT EXISTS sensors (id int AUTO_INCREMENT, temperature float, humidity float,soilmoaster float,windSpeed float ,timestamp VARCHAR(255), PRIMARY KEY(id))";
    db.query(sql,(err,result)=>{
     if(err) throw err;
     console.log("result");
@@ -42,9 +47,10 @@ const db = mysql.createConnection({
  });
  
  // Add Row 
- app.get("/addrow/:temperature/:humidity",(req,res)=>{
-  let sql = "INSERT INTO posts (temperature, humidity, timestamp ) VALUES (?,?,?)";
-  var values = [req.params.temperature,req.params.humidity,Date.now()];
+ app.get("/addrow/:temperature/:humidity/:soilmoaster/:windSpeed",(req,res)=>{
+  let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed ) VALUES (?,?,?,?,?)";
+  var values = [req.params.temperature,req.params.humidity,"04-09-2022 13:51",req.params.soilmoaster,req.params.windSpeed];
+
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
     console.log("inserted");
@@ -54,14 +60,47 @@ const db = mysql.createConnection({
 
  // Get ALL Data 
  app.get("/getAllData",(req,res)=>{
-  let sql ="SELECT * FROM posts";
+  let sql ="SELECT * FROM sensors";
    let query = db.query(sql,(err,result)=>{
      if(err) throw err;
-     console.log("All Data Fetched ! \n"+result);
+     console.log("All Data Fetched ! ");
+     var sum = 0;
+    var resultArray = [];
+        for(var i in result) {
+          if(result.hasOwnProperty(i)){
+            resultArray.push(result[i]);
+            sum+=result[i]['temperature']
+            console.log("temperature: "+sum);
+          }
+          
+        } 
+       console.log( "\n temperature moy: "+sum/resultArray.length) 
      res.send(result);
    });
 
  });
+
+
+ app.get("/temp_moy",(req,res)=>{
+    let sql ="SELECT sum(temperature)/count(*) FROM sensors ";
+
+       db.query(sql,(err,result)=>{
+          if(err) throw err;
+           console.log("Result is: "+result[0]['sum(temperature)/count(*)']);
+           res.send("result is: "+result[0]['sum(temperature)/count(*)']);
+       });  
+
+ });
+ app.get("/getLastData",(req,res)=>{
+  let sql ="SELECT * FROM sensors ORDER BY DESC limit 1 ";
+
+     db.query(sql,(err,result)=>{
+        if(err) throw err;
+         console.log("Result is: "+result[0]['sum(temperature)/count(*)']);
+         res.send("result is: "+result[0]['sum(temperature)/count(*)']);
+     });  
+
+});
 
 
 
