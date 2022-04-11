@@ -36,20 +36,41 @@ const db = mysql.createConnection({
    });
  });
 
- // Create Table 
+ // Create sensors Table 
  app.get("/createposttable",(req,res)=>{
    let sql = "CREATE TABLE IF NOT EXISTS sensors (id int AUTO_INCREMENT, temperature float, humidity float,soilmoaster float,windSpeed float ,timestamp VARCHAR(255), PRIMARY KEY(id))";
    db.query(sql,(err,result)=>{
     if(err) throw err;
     console.log("result");
-    res.send("Table Created ! ");
+    res.send("Table sensors Created ! ");
   });
  });
+ // Create actutors Table 
+ app.get("/createacttable",(req,res)=>{
+  let sql = "CREATE TABLE IF NOT EXISTS actutors (id int AUTO_INCREMENT, type int, x float,y float,state float, PRIMARY KEY(id))";
+  db.query(sql,(err,result)=>{
+   if(err) throw err;
+   console.log("result");
+   res.send("Table actutors Created ! ");
+ });
+});
  
- // Add Row 
- app.get("/addrow/:temperature/:humidity/:soilmoaster/:windSpeed",(req,res)=>{
+ // Add Row in sensors
+ app.get("/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed",(req,res)=>{
   let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed ) VALUES (?,?,?,?,?)";
   var values = [req.params.temperature,req.params.humidity,"04-09-2022 13:51",req.params.soilmoaster,req.params.windSpeed];
+
+  db.query(sql,values,(err,result)=>{
+    if(err) throw err;
+    console.log("inserted");
+    res.send(values);
+  })
+ });
+
+ // Add Row in actutors
+ app.get("/addActutorsrow/:type/:x/:y/:state",(req,res)=>{
+  let sql = "INSERT INTO actutors (type, x, y,state) VALUES (?,?,?,?)";
+  var values = [req.params.type,req.params.x,req.params.y,req.params.state];
 
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
@@ -80,7 +101,7 @@ const db = mysql.createConnection({
 
  });
 
-
+// Calculate temperature
  app.get("/temp_moy",(req,res)=>{
     let sql ="SELECT sum(temperature)/count(*) FROM sensors ";
 
@@ -91,13 +112,28 @@ const db = mysql.createConnection({
        });  
 
  });
- app.get("/getLastData",(req,res)=>{
-  let sql ="SELECT * FROM sensors ORDER BY DESC limit 1 ";
+
+ // Getting last Data
+ app.get("/getLastDataSensors",(req,res)=>{
+  let sql ="SELECT * FROM sensors ORDER BY id DESC LIMIT 1";
 
      db.query(sql,(err,result)=>{
         if(err) throw err;
-         console.log("Result is: "+result[0]['sum(temperature)/count(*)']);
-         res.send("result is: "+result[0]['sum(temperature)/count(*)']);
+         console.log("Result is: "+result[0]);
+         res.send(result);
+     });  
+
+});
+
+
+ // Getting Data for spesific actutor
+ app.get("/getSpecActutors/:id",(req,res)=>{
+  let sql ="SELECT * FROM actutors WHERE id ="+req.params.id;
+
+     db.query(sql,(err,result)=>{
+        if(err) throw err;
+         console.log("id is: "+req.params.id);
+         res.send(result[0]);
      });  
 
 });
