@@ -38,7 +38,7 @@ const db = mysql.createConnection({
 
  // Create sensors Table 
  app.get("/createposttable",(req,res)=>{
-   let sql = "CREATE TABLE IF NOT EXISTS sensors (id int AUTO_INCREMENT, temperature float, humidity float,soilmoaster float,windSpeed float ,timestamp VARCHAR(255), PRIMARY KEY(id))";
+   let sql = "CREATE TABLE IF NOT EXISTS sensors (id int AUTO_INCREMENT, temperature float, humidity float,soilmoaster float,windSpeed float , x float, y float , timestamp VARCHAR(255), PRIMARY KEY(`id`,`timestamp`) )";
    db.query(sql,(err,result)=>{
     if(err) throw err;
     console.log("result");
@@ -47,18 +47,20 @@ const db = mysql.createConnection({
  });
  // Create actutors Table 
  app.get("/createacttable",(req,res)=>{
-  let sql = "CREATE TABLE IF NOT EXISTS actutors (id int AUTO_INCREMENT, type int, x float,y float,state float, PRIMARY KEY(id))";
+  let sql = "CREATE TABLE IF NOT EXISTS actutors (id int AUTO_INCREMENT, type int, x float,y float,state float,timestamp VARCHAR(255), PRIMARY KEY(id))";
   db.query(sql,(err,result)=>{
    if(err) throw err;
    console.log("result");
    res.send("Table actutors Created ! ");
  });
 });
+
+ // ********************************** Creating ending ************************** // 
  
- // Add Row in sensors
- app.get("/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed",(req,res)=>{
-  let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed ) VALUES (?,?,?,?,?)";
-  var values = [req.params.temperature,req.params.humidity,"04-09-2022 13:51",req.params.soilmoaster,req.params.windSpeed];
+ // Add Row in sensors 
+ app.get("/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed/:x/:y",(req,res)=>{
+  let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed,x,y ) VALUES (?,?,?,?,?,?,?)";
+  var values = [req.params.temperature,req.params.humidity,"04-09-2022 13:51",req.params.soilmoaster,req.params.windSpeed,req.params.x,req.params.y];
 
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
@@ -67,20 +69,10 @@ const db = mysql.createConnection({
   })
  });
 
- // Add Row in actutors
- app.get("/addActutorsrow/:type/:x/:y/:state",(req,res)=>{
-  let sql = "INSERT INTO actutors (type, x, y,state) VALUES (?,?,?,?)";
-  var values = [req.params.type,req.params.x,req.params.y,req.params.state];
 
-  db.query(sql,values,(err,result)=>{
-    if(err) throw err;
-    console.log("inserted");
-    res.send(values);
-  })
- });
 
- // Get ALL Data 
- app.get("/getAllData",(req,res)=>{
+ // Get ALL Data from sensors
+/* app.get("/getAllData",(req,res)=>{
   let sql ="SELECT * FROM sensors";
    let query = db.query(sql,(err,result)=>{
      if(err) throw err;
@@ -99,9 +91,9 @@ const db = mysql.createConnection({
      res.send(result);
    });
 
- });
+ });*/
 
-// Calculate temperature
+// Calculate temperature moyen
  app.get("/temp_moy",(req,res)=>{
     let sql ="SELECT sum(temperature)/count(*) FROM sensors ";
 
@@ -125,6 +117,20 @@ const db = mysql.createConnection({
 
 });
 
+/******************************************* ACTUTORS ******************************************************** */
+
+ // Add Row in actutors
+ app.get("/addActutorsrow/:type/:x/:y/:state",(req,res)=>{
+  let sql = "INSERT INTO actutors (type, x, y,state,timestamp) VALUES (?,?,?,?,?)";
+  var values = [req.params.type,req.params.x,req.params.y,req.params.state,Date.now()];
+
+  db.query(sql,values,(err,result)=>{
+    if(err) throw err;
+    console.log("inserted");
+    res.send(values);
+  })
+ });
+
 
  // Getting Data for spesific actutor
  app.get("/getSpecActutors/:id",(req,res)=>{
@@ -136,10 +142,24 @@ const db = mysql.createConnection({
          res.send(result[0]);
      });  
 
+}); 
+
+// Update Actutor State 
+app.get("/UpdateState/:id/:state",(req,res)=>{
+   let sql = "UPDATE actutors SET state="+req.params.state+" WHERE id="+req.params.id;
+   db.query(sql,(err,result)=>{
+    if(err) throw err;
+     console.log("update id is: "+req.params.id);
+     res.send(result);
+ });  
+
+
 });
 
 
 
 
   app.listen(3000,()=> console.log("app working on 3000 ... "));
+
+
 
