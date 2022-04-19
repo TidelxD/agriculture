@@ -228,9 +228,7 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
    const results = compareSync(req.params.password, result[0].password);
     if(results){
        result.password = undefined;
-      const jsontoken = sign({ results: result }, "qwe1234", {
-        expiresIn: "1h"
-      }); 
+      const jsontoken = sign({ results: result }, "qwe1234"); 
       return res.json({
         success: 1,
         message: "login successfully",
