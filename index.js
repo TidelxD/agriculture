@@ -217,14 +217,15 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
   db.query(sql,(err,result)=>{
 
     if(err) throw err; 
+
     if (!result[0]) {
       return res.json({
         success: 0,
-        data: "Invalid email or password"
+        message: "Invalid email or password"
       });
     }
-    console.log("req.params.password: "+req.params.password);
-    console.log("\n result.password: "+result[0].password);
+   
+
    const results = compareSync(req.params.password, result[0].password);
     if(results){
        result.password = undefined;
@@ -232,13 +233,14 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
       return res.json({
         success: 1,
         message: "login successfully",
-        token : jsontoken
+        token : jsontoken,
+        username : req.params.username
       });
 
     }else {
       return res.json({
         success: 0,
-        data: "Invalid email or password"
+        message: "Invalid email or password"
       });
     } 
     
