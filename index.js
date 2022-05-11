@@ -64,7 +64,9 @@ const db = mysql.createConnection({
  // Add Row in sensors 
  app.get("/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed/:x/:y",checkToken,(req,res)=>{
   let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed,x,y ) VALUES (?,?,?,?,?,?,?)";
-  var values = [req.params.temperature,req.params.humidity,"04-09-2022 13:51",req.params.soilmoaster,req.params.windSpeed,req.params.x,req.params.y];
+  var timestamp = Date.now();
+var date = new Date(timestamp);
+  var values = [req.params.temperature,req.params.humidity,date,req.params.soilmoaster,req.params.windSpeed,req.params.x,req.params.y];
 
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
@@ -116,7 +118,7 @@ const db = mysql.createConnection({
      db.query(sql,(err,result)=>{
         if(err) throw err;
          console.log("Result is: "+result[0]);
-         res.send(result);
+         res.send(result[0]);
      });  
 
 });
@@ -126,7 +128,9 @@ const db = mysql.createConnection({
  // Add Row in actutors
  app.get("/addActutorsrow/:type/:x/:y/:state",checkToken,(req,res)=>{
   let sql = "INSERT INTO actutors (type, x, y,state,timestamp) VALUES (?,?,?,?,?)";
-  var values = [req.params.type,req.params.x,req.params.y,req.params.state,Date.now()];
+  var timestamp = Date.now();
+  var date = new Date(timestamp);
+  var values = [req.params.type,req.params.x,req.params.y,req.params.state,date];
 
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
@@ -148,22 +152,53 @@ const db = mysql.createConnection({
 
 }); 
 
-// Update Actutor State with insert query
-app.get("/UpdateStateIns/:id/:type/:x/:y/:state",checkToken,(req,res)=>{
-  let sql = "INSERT INTO actutors (id,type, x, y,state) VALUES (?,?,?,?,?)";
-  var values = [req.params.id,req.params.type,req.params.x,req.params.y,req.params.state];
+// Getting last two actutors
+app.get("/getLastActutor",checkToken,(req,res)=>{
+  let sql0 ="SELECT * FROM actutors WHERE type ="+0+" ORDER BY id DESC LIMIT 1";
+  let sql1 ="SELECT * FROM actutors WHERE type ="+1+" ORDER BY id DESC LIMIT 1";
+   var resultArray = [];
 
+     db.query(sql0,(err,result)=>{
+        if(err) throw err;
+         console.log("id is: "+result[0].id);
+         resultArray.push(result[0]);
+
+         db.query(sql1,(err,result1)=>{
+
+          if(err) throw err;
+          console.log("id is: "+result[0].id);
+          resultArray.push(result1[0]);
+
+          res.send(resultArray);
+         });
+
+
+
+     });  
+
+});
+
+// Update Actutor State with insert query
+app.post("/UpdateStateIns/:type/:x/:y/:state",checkToken,(req,res)=>{
+  let sql = "INSERT INTO actutors (type, x, y,state) VALUES (?,?,?,?)";
+  var values = [req.params.type,req.params.x,req.params.y,req.params.state];
+  let sql1 ="SELECT * FROM actutors WHERE type ="+req.params.type+" ORDER BY id DESC LIMIT 1";
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
     console.log("inserted");
-    res.send(values);
+
+    db.query(sql1,(err,result)=>{
+      if(err) throw err;
+      res.send(result[0]);
+    });
+   
   });
 
 });
 
 
 
-// Update Actutor State with insert query 
+// Update Actutor State with update query 
 app.get("/UpdateState/:id/:state",checkToken,(req,res)=>{
   let sql = "UPDATE users SET state="+req.params.state+" WHERE id="+req.params.id;
   db.query(sql,(err,result)=>{
@@ -183,29 +218,37 @@ app.get("/UpdateState/:id/:state",checkToken,(req,res)=>{
 
 const { hashSync, genSaltSync, compareSync } = require("bcrypt");
  // Create User 
- app.get("/creatuser/:username/:password",(req,res)=>{
+ app.post("/creatuser/:username/:password",(req,res)=>{
   
   let sql = "INSERT INTO users (username, password) VALUES (?,?)";
   const salt =  genSaltSync(10);
   req.params.password = hashSync(req.params.password,salt);
   var values = [req.params.username,req.params.password];
-  
-  db.query("SELECT * FROM users WHERE username ="+req.params.username,(err,result)=>{
-    if(err) throw err;
-    if(result){
-        return res.json({
-          success: 0,
-          data: "this username already used by another account !"
-        });
 
-    }
-    db.query(sql,values,(err,result)=>{
-      if(err) throw err;
-      console.log("inserted");
-      res.send(result);
-    });
+  let sqls ="SELECT * FROM users WHERE username ="+req.params.username;
+  
+  db.query(sqls,(err,result)=>{
+
+    if(err) throw err;
+
+      if(result[0]){
+          return res.json({
+            success: 0,
+            data: "this username already used by another account !"
+          });
+  
+      }
+
+      db.query(sql,values,(err,result)=>{
+        if(err) throw err;
+        console.log("inserted");
+        res.send(result);
+      });
+     
    
+
   });
+  
   
  });
 
@@ -220,11 +263,10 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
     if (!result[0]) {
       return res.json({
         success: 0,
-        data: "Invalid email or password"
+        message: "Invalid email or password"
       });
     }
-    console.log("req.params.password: "+req.params.password);
-    console.log("\n result.password: "+result[0].password);
+   
    const results = compareSync(req.params.password, result[0].password);
     if(results){
        result.password = undefined;
@@ -232,13 +274,14 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
       return res.json({
         success: 1,
         message: "login successfully",
-        token : jsontoken
+        token : jsontoken,
+        username : result[0].username
       });
 
     }else {
       return res.json({
         success: 0,
-        data: "Invalid email or password"
+        message: "Invalid email or password"
       });
     } 
     
