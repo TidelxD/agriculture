@@ -260,6 +260,7 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
   db.query(sql,(err,result)=>{
 
     if(err) throw err; 
+
     if (!result[0]) {
       return res.json({
         success: 0,
