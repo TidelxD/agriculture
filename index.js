@@ -16,9 +16,9 @@ app.use(login );
 // create connections ...
 const db = mysql.createConnection({
   host :"localhost",
-  user:"root",
-  password:"",
-  database:"agriculture"
+  user:"#masked",
+  password:"#masked",
+  database:"#masked"
 });
 
 // connect to database
@@ -31,7 +31,7 @@ const db = mysql.createConnection({
  });
 
  // create DB 
- app.get('/createdb',(req,res)=>{
+ app.get('/api/createdb',(req,res)=>{
    let sql ="CREATE DATABASE agriculture";
    db.query(sql,(err,result)=>{
      if(err) throw err;
@@ -41,7 +41,7 @@ const db = mysql.createConnection({
  });
 
  // Create sensors Table 
- app.get("/createposttable",(req,res)=>{
+ app.get("/api/createposttable",(req,res)=>{
    let sql = "CREATE TABLE IF NOT EXISTS sensors (id int AUTO_INCREMENT, temperature float, humidity float,soilmoaster float,windSpeed float , x float, y float , timestamp VARCHAR(255), PRIMARY KEY(`id`,`timestamp`) )";
    db.query(sql,(err,result)=>{
     if(err) throw err;
@@ -49,9 +49,10 @@ const db = mysql.createConnection({
     res.send("Table sensors Created ! ");
   });
  });
+ 
  // Create actutors Table 
- app.get("/createacttable",(req,res)=>{
-  let sql = "CREATE TABLE IF NOT EXISTS actutors (id int AUTO_INCREMENT, type int, x float,y float,state float,timestamp VARCHAR(255), PRIMARY KEY(id))";
+ app.get("/api/createacttable",(req,res)=>{
+  let sql = "CREATE TABLE IF NOT EXISTS actutors (id int AUTO_INCREMENT, type int, x float,y float,state float,timestamp float, PRIMARY KEY(id))";
   db.query(sql,(err,result)=>{
    if(err) throw err;
    console.log("result");
@@ -62,11 +63,12 @@ const db = mysql.createConnection({
  // ********************************** Creating ending ************************** // 
  
  // Add Row in sensors 
- app.get("/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed/:x/:y",checkToken,(req,res)=>{
+ app.get("/api/addSensorsrow/:temperature/:humidity/:soilmoaster/:windSpeed/:x/:y",checkToken,(req,res)=>{
   let sql = "INSERT INTO sensors (temperature, humidity, timestamp,soilmoaster,windSpeed,x,y ) VALUES (?,?,?,?,?,?,?)";
-  var timestamp = Date.now();
-var date = new Date(timestamp);
-  var values = [req.params.temperature,req.params.humidity,date,req.params.soilmoaster,req.params.windSpeed,req.params.x,req.params.y];
+   
+   
+
+  var values = [req.params.temperature,req.params.humidity,Date.now(),req.params.soilmoaster,req.params.windSpeed,req.params.x,req.params.y];
 
   db.query(sql,values,(err,result)=>{
     if(err) throw err;
@@ -100,7 +102,7 @@ var date = new Date(timestamp);
  });*/
 
 // Calculate temperature moyen
- app.get("/temp_moy",checkToken,(req,res)=>{
+ app.get("/api/temp_moy",checkToken,(req,res)=>{
     let sql ="SELECT sum(temperature)/count(*) FROM sensors ";
 
        db.query(sql,(err,result)=>{
@@ -112,7 +114,7 @@ var date = new Date(timestamp);
  });
 
  // Getting last Data
- app.get("/getLastDataSensors",checkToken,(req,res)=>{
+ app.get("/api/getLastDataSensors",checkToken,(req,res)=>{
   let sql ="SELECT * FROM sensors ORDER BY id DESC LIMIT 1";
 
      db.query(sql,(err,result)=>{
@@ -123,10 +125,22 @@ var date = new Date(timestamp);
 
 });
 
+ // Getting  Data for charts
+ app.get("/api/getChartDataSensors",checkToken,(req,res)=>{
+  let sql ="SELECT * FROM sensors ORDER BY id DESC LIMIT 5";
+
+     db.query(sql,(err,result)=>{
+        if(err) throw err;
+         console.log("Result is: "+result[0]);
+         res.send(result);
+     });  
+
+});
+
 /******************************************* ACTUTORS ******************************************************** */
 
  // Add Row in actutors
- app.get("/addActutorsrow/:type/:x/:y/:state",checkToken,(req,res)=>{
+ app.get("/api/addActutorsrow/:type/:x/:y/:state",checkToken,(req,res)=>{
   let sql = "INSERT INTO actutors (type, x, y,state,timestamp) VALUES (?,?,?,?,?)";
   var timestamp = Date.now();
   var date = new Date(timestamp);
@@ -141,7 +155,7 @@ var date = new Date(timestamp);
 
 
  // Getting Data for spesific actutor
- app.get("/getSpecActutors/:id",checkToken,(req,res)=>{
+ app.get("/api/getSpecActutors/:id",checkToken,(req,res)=>{
   let sql ="SELECT * FROM actutors WHERE id ="+req.params.id;
 
      db.query(sql,(err,result)=>{
@@ -153,7 +167,7 @@ var date = new Date(timestamp);
 }); 
 
 // Getting last two actutors
-app.get("/getLastActutor",checkToken,(req,res)=>{
+app.get("/api/getLastActutor",checkToken,(req,res)=>{
   let sql0 ="SELECT * FROM actutors WHERE type ="+0+" ORDER BY id DESC LIMIT 1";
   let sql1 ="SELECT * FROM actutors WHERE type ="+1+" ORDER BY id DESC LIMIT 1";
    var resultArray = [];
@@ -179,7 +193,7 @@ app.get("/getLastActutor",checkToken,(req,res)=>{
 });
 
 // Update Actutor State with insert query
-app.post("/UpdateStateIns/:type/:x/:y/:state",checkToken,(req,res)=>{
+app.post("/api/UpdateStateIns/:type/:x/:y/:state",checkToken,(req,res)=>{
   let sql = "INSERT INTO actutors (type, x, y,state) VALUES (?,?,?,?)";
   var values = [req.params.type,req.params.x,req.params.y,req.params.state];
   let sql1 ="SELECT * FROM actutors WHERE type ="+req.params.type+" ORDER BY id DESC LIMIT 1";
@@ -199,7 +213,7 @@ app.post("/UpdateStateIns/:type/:x/:y/:state",checkToken,(req,res)=>{
 
 
 // Update Actutor State with update query 
-app.get("/UpdateState/:id/:state",checkToken,(req,res)=>{
+app.get("/api/UpdateState/:id/:state",checkToken,(req,res)=>{
   let sql = "UPDATE users SET state="+req.params.state+" WHERE id="+req.params.id;
   db.query(sql,(err,result)=>{
    if(err) throw err;
@@ -218,7 +232,7 @@ app.get("/UpdateState/:id/:state",checkToken,(req,res)=>{
 
 const { hashSync, genSaltSync, compareSync } = require("bcrypt");
  // Create User 
- app.post("/creatuser/:username/:password",(req,res)=>{
+ app.post("/api/creatuser/:username/:password",(req,res)=>{
   
   let sql = "INSERT INTO users (username, password) VALUES (?,?)";
   const salt =  genSaltSync(10);
@@ -253,14 +267,13 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
  });
 
  // Get User by username
- app.get("/login/:username/:password",(req,res)=>{
+ app.get("/api/login/:username/:password",(req,res)=>{
 
   let sql ="SELECT * FROM users WHERE username ="+req.params.username;
   
   db.query(sql,(err,result)=>{
 
     if(err) throw err; 
-
     if (!result[0]) {
       return res.json({
         success: 0,
@@ -293,7 +306,7 @@ const { hashSync, genSaltSync, compareSync } = require("bcrypt");
 
 
 
-  app.listen(3000,()=> console.log("app working on 3000 ... "));
+  app.listen();
 
 
 
